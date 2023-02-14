@@ -42,7 +42,7 @@ sf::Texture texture_ground,texture_lf,texture_rg,texture_box, texture_cloud[2], 
 texture_nuke, texture_stuka_lf,texture_stuka_rg,texture_explo_nuke,texture_explo_tnt,texture_tnt,
 texture_air_icon,texture_bullet_lf,texture_bullet_rg,texture_bullet_icon, texture_drug,
 texture_stun, texture_number[10], texture_sadSS_lf, texture_sadSS_rg, texture_happySS_lf, texture_happySS_rg,
-texture_p1_win,texture_p2_win, texture_buff;
+texture_p1_win,texture_p2_win, texture_buff, texture_debuff;
 
 
 sf::SoundBuffer jump_buffer,explo_nuke_buffer,explo_tnt_buffer,stuka_buffer,bullet_buffer,power_buffer
@@ -181,7 +181,7 @@ int n = 10, t = 0, m = 8200;
 object boxes[11], numberx, numbery, cloud[2];
 object ground_lf,ground_rg,player_lf,player_rg, background,nuke,stuka_lf,stuka_rg,
 explo_nuke,tnt,explo_tnt,air_icon,bullet_lf,bullet_rg,bullet_icon, drug, winner, stun,
-happySS_lf,happySS_rg,sadSS_lf,sadSS_rg,p1_win,p2_win, buff;
+happySS_lf,happySS_rg,sadSS_lf,sadSS_rg,p1_win,p2_win, buff, debuff;
 
 sf::IntRect nukeRect(0, 0, 170, 160);
 sf::IntRect tntRect(0, 0, 100, 100);
@@ -211,6 +211,8 @@ void Loading(){
 
     texture_buff.loadFromFile("buff.png");
     buff.sprite.setTexture(texture_buff);
+    texture_debuff.loadFromFile("debuff.png");
+    debuff.sprite.setTexture(texture_debuff);
     texture_happySS_lf.loadFromFile("happySS_lf.png");
     texture_happySS_rg.loadFromFile("happySS_rg.png");
     texture_sadSS_lf.loadFromFile("sadSS_lf.png");
@@ -320,8 +322,8 @@ bool checkplayerdurg(object& player, object& drug){
 }
 
 bool checkplayertnt(object& player, ld x, ld y){
-    sf::Vector2f pos1 = player.sprite.getPosition();
-    return abs(pos1.x-x) <= 80 && abs(pos1.y-y) <= 80;
+    sf::Vector2f pos = player.sprite.getPosition();
+    return abs(pos.x-x) <= 60 && abs(pos.y-y) <= 60;
 }
 
 void checkColision(){
@@ -363,21 +365,26 @@ void cloud_move(object& cloud)
     cloud.sprite.move(cloud.speed, 0);
 }
 
-void setspeed(object &o, bool ok)
+void setspeed(object &o)
 {
-    if(o.speed < speed && ok)
+    if(o.speed < speed)
     {
-        o.speed = speed;
+        debuff.isDraw = 1;
+        debuff.isDraw = 1;
+        sf::Vector2f pos = o.sprite.getPosition();
+        debuff.setPosition(pos.x+10, pos.y-80);
     }
-    else if(o.speed > speed && !ok)
+    else if(o.speed > speed)
     {
-
-        o.speed = speed;
+        buff.isDraw = 1;
+        sf::Vector2f pos = o.sprite.getPosition();
+        buff.setPosition(pos.x+10, pos.y-60);
     }
 }
 
 void Change_Gamestate(){
     buff.isDraw = 0;
+    debuff.isDraw = 0;
     //if (box.is_throw) box.throwing(box.direct);
     for(int i = 0; i <= min(n, t/m); i ++){
         if(boxes[i].is_throw)
@@ -386,8 +393,11 @@ void Change_Gamestate(){
     if (tnt.is_throw){
         tnt.throwing(tnt.direct);
         sf::Vector2f pos = tnt.sprite.getPosition();
-        if (isOnLand(pos.x,pos.y)){
+        //cout << pos.x <<" "<<pos.y<<endl;
+        if (isOnLand(pos.x,pos.y) ){
+
             tnt.isDraw = 0;
+            tnt.is_throw = 0;
             explo_tnt.isDraw = 1; explo_tnt.setPosition(pos.x,pos.y);
             explo_tntSound.play();
             if(checkplayertnt(player_lf, pos.x, pos.y))
@@ -400,6 +410,11 @@ void Change_Gamestate(){
                 player_rg.speed /= 2;
                 timerspeedslow.restart();
             }
+        }
+        else if(pos.y > 1400)
+        {
+            tnt.isDraw = 0;
+            tnt.is_throw = 0;
         }
     }
 
@@ -434,7 +449,6 @@ void Change_Gamestate(){
     {
         if(checkplayerdurg(player_lf, drug))
         {
-            buff.isDraw = 1;
             player_lf.speed *= 2;
             drug.isDraw = 0;
             timerdrug.restart();
@@ -445,7 +459,6 @@ void Change_Gamestate(){
         }
         else if(checkplayerdurg(player_rg, drug))
         {
-            buff.isDraw = 1;
             player_rg.speed *= 2;
             drug.isDraw = 0;
             timerdrug.restart();
@@ -461,19 +474,6 @@ void Change_Gamestate(){
 
         }
     }
-    cout << buff.isDraw <<" "<< timerdrug.getElapsedTime().asSeconds() <<" "<< player_lf.speed <<" "<<player_rg.speed << endl;
-    if(timerspeedrise.getElapsedTime().asSeconds() > 12)
-    {
-        setspeed(player_lf, 0);
-        setspeed(player_rg, 0);
-        player_lf.onDrug = player_rg.onDrug = 0;
-    }
-    if(timerspeedslow.getElapsedTime().asSeconds() > 12)
-    {
-        setspeed(player_lf, 1);
-        setspeed(player_rg, 1);
-    }
-
     if (player_lf.is_jump){
         player_lf.jump(); //jumpSound.play();
     }
@@ -490,7 +490,6 @@ void Change_Gamestate(){
     if (is_falling(tnt)) tnt.fall(0.0007);
     cloud_move(cloud[0]);
     cloud_move(cloud[1]);
-
     if (nuke.isDraw){
         sf::Vector2f pos = nuke.sprite.getPosition();
         if (isOnLand(pos.x,pos.y)){
@@ -619,6 +618,20 @@ void Change_Gamestate(){
 
     }
 
+    if(timerspeedrise.getElapsedTime().asSeconds() > 12)
+    {
+        if(player_lf.speed > speed)player_lf.speed = speed;
+        if(player_rg.speed > speed)player_rg.speed = speed;
+        player_lf.onDrug = player_rg.onDrug = 0;
+    }
+    if(timerspeedslow.getElapsedTime().asSeconds() > 12)
+    {
+        if(player_lf.speed < speed)player_lf.speed = speed;
+        if(player_rg.speed < speed)player_rg.speed = speed;
+    }
+
+    setspeed(player_lf);
+    setspeed(player_rg);
     respawn();
 }
 
@@ -661,6 +674,7 @@ void RenderGame(){
     numbery.drawObject();
     stun.drawObject();
     buff.drawObject();
+    debuff.drawObject();
 }
 
 void init_position(){
@@ -691,7 +705,7 @@ void init_position(){
     explo_tnt.isDraw = 0; tnt.isDraw = 1;
     //bullet_lf.setPosition(0,430);
     bullet_lf.isDraw = bullet_rg.isDraw = bullet_icon.isDraw = 0;
-    stun.isDraw = buff.isDraw = 0;
+    stun.isDraw = buff.isDraw = debuff.isDraw =0;
     //bullet_icon.isDraw = 0;
 
 }
