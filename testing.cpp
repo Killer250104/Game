@@ -49,7 +49,7 @@ sf::SoundBuffer jump_buffer,explo_nuke_buffer,explo_tnt_buffer,stuka_buffer,bull
 ,outro_buffer;
 sf::Sound jumpSound,explo_nukeSound,explo_tntSound,stukaSound,bulletSound,powerSound,outro;
 sf::Music main_theme;
-const ld speed = 4;
+const ld speed = 0.8;
 struct object{
     sf::Sprite sprite;
     bool isDraw = 1,is_jump = 0,is_fall = 0,is_picked = 0,is_throw = 0,character = 0,jumping = 0, dizzy = 0;;
@@ -114,7 +114,7 @@ struct object{
         sf::Vector2f pos = sprite.getPosition();
         if (isOnLand(pos.x,pos.y)) jumpSound.play();
         //cout<<pos.x<<" "<<pos.y<<"\n";
-        pos.y = pos.y - v0*t_jump + 0.5*0.98*t_jump*t_jump;
+        pos.y = pos.y - v0*t_jump + 0.5*1.2*t_jump*t_jump;
 
         if (isOnLand(pos.x,pos.y)) is_jump = 0,sprite.setPosition(pos.x,420),t_jump = 0;
         else sprite.setPosition(pos.x,pos.y);
@@ -125,7 +125,7 @@ struct object{
         if (is_picked == 1) return;
         t_fall += timing;
         sf::Vector2f pos = sprite.getPosition();
-        pos.y = pos.y + 0.5*0.98*t_fall*t_fall;
+        pos.y = pos.y + 0.5*1.2*t_fall*t_fall;
         if (isOnLand(pos.x,pos.y)) is_jump = 0,sprite.setPosition(pos.x,420),t_fall = 0;
         else sprite.setPosition(pos.x,pos.y);
     }
@@ -413,8 +413,8 @@ void Change_Gamestate(){
         }
         else if(pos.y > 1400)
         {
+            tnt.renew();
             tnt.isDraw = 0;
-            tnt.is_throw = 0;
         }
     }
 
@@ -594,7 +594,7 @@ void Change_Gamestate(){
         timerbullet.restart();
     }
     if (bullet_lf.isDraw){
-        bullet_lf.moves(1.3,0);
+        bullet_lf.moves(1.5,0);
         sf::Vector2f pos = bullet_lf.sprite.getPosition();
         if (pos.x > 1400) bullet_lf.isDraw = 0;
 
@@ -606,7 +606,7 @@ void Change_Gamestate(){
         }
     }
     if (bullet_rg.isDraw){
-        bullet_rg.moves(-1.3,0);
+        bullet_rg.moves(-1.5,0);
         sf::Vector2f pos = bullet_rg.sprite.getPosition();
         if (pos.x < -100) bullet_rg.isDraw = 0;
         if(checkplayertnt(player_lf, pos.x, pos.y))
@@ -675,6 +675,7 @@ void RenderGame(){
     stun.drawObject();
     buff.drawObject();
     debuff.drawObject();
+    //cout << player_lf.speed <<" "<<player_rg.speed << endl;
 }
 
 void init_position(){
@@ -802,6 +803,7 @@ void fpause(){
 
 }
 int main(){
+    window.setFramerateLimit(950);
     Loading();
     init_position(); main_theme.play();
     while (window.isOpen()){
@@ -877,7 +879,7 @@ int main(){
                         window.close();
                     }
                 }
-
+            }
                 ///left player operation
                 //if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) call_stuka(stuka_lf,-200,0);
                 if(player_lf.dizzy)
@@ -960,7 +962,7 @@ int main(){
             RenderGame();
             //cloud.moves(10, 10);
             window.display();
-        }
+
 
     }
     return 0;
